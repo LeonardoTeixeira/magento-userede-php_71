@@ -1,0 +1,245 @@
+<?php
+/**
+ * Copyright © 2016 Mozg. All rights reserved.
+ * See LICENSE.txt for license details.
+ */
+?>
+
+<?php
+
+/*
+dump(get_class($this));
+dump($this->getData());
+dump($this->getMethod());
+dump($this->getMethod()->getData());
+dump($this->getInfo());
+dump($this->getInfo()->getData());
+dump(get_class_methods(get_class($this)));
+//dump(get_class_methods(get_class($this->getInfo())));
+*/
+
+?>
+
+<?php
+$info = $this->getInfo();
+?>
+
+<?php echo $this->htmlEscape($this->getMethod()->getTitle()) ?><br/>
+
+<?php if ($info): ?>
+
+    <?php if ($info->getMozgPspReference() == ''): ?>
+        <?php echo Mage::helper('mozg_userede')->__('Payment has not been processed yet.') ?> <br/>
+    <?php else :?>
+
+        <?php
+
+        //
+
+        $order = $this->getMethod()->getInfoInstance()->getOrder();
+
+        $realOrderId = $order->getRealOrderId();
+        $incrementId = $order->getIncrementId();
+
+        $storeId = $this->getMethod()->getInfoInstance()->getOrder()->getStoreId();
+
+        //
+
+        $pspReference = $this->htmlEscape($info->getMozgPspReference());
+
+        //
+
+        if (Mage::app()->getStore()->isAdmin()){
+
+        $url = Mage::helper('adminhtml')->getUrl('adminhtml/Userede/consulta/', array('pspReference' => $pspReference,'incrementId' => $incrementId) );
+        $link = "javascript:openPopupsMozg('$url', 'WinXilinus', 'Link', 'Userede', 'userede');";
+
+        echo Mage::helper('mozg_userede')->__('Userede PSP Reference: <a href="%s">%s</a>', $link, $pspReference) . ' <br/>';
+
+        }
+
+        //
+
+        $service = Mage::helper('mozg_userede/service')->_initService($storeId);
+        $responseData = $service->get($pspReference);
+
+        //dump($responseData);exit;
+
+        if(array_key_exists('Payment', $responseData)){
+
+            $_status = [
+                '0'=>'NotFinished',
+                '1'=>'Authorized',
+                '2'=>'PaymentConfirmed',
+                '3'=>'Denied',
+                '10'=>'Voided',
+                '11'=>'Refunded',
+                '12'=>'Pending',
+                '13'=>'Aborted',
+                '20'=>'Scheduled',
+            ];
+            $payment_status = $responseData['Payment']['Status'];
+            $color = ($payment_status == '2') ? 'green' : 'red';
+
+            $message_status = Mage::helper('mozg_userede')->__($_status[$payment_status]);
+
+            $authResult = '<font color="'.$color.'"><b>' . $message_status . '</b></font>';
+
+            echo Mage::helper('mozg_userede')->__('Transaction Status: %s', $authResult) . ' <br/>';
+
+        } else {
+
+            echo Mage::helper('mozg_userede')->__('Query Error: %s', $responseData['message']) . ' <br/>';
+
+        }
+
+        //
+
+        ?>
+
+    <?php endif;?>
+
+
+
+    <?php if ($this->getInfo()->getMethod() == 'mozg_userede_api_cc'): ?>
+        <?php echo Mage::helper('mozg_userede')->__('Name on the Card: %s', $this->htmlEscape($this->getInfo()->getCcOwner())) ?><br/>
+        <?php if( $this->htmlEscape($this->getInfo()->getAdditionalInformation('social_security_number')) != "" ): ?>
+            <?php echo Mage::helper('mozg_userede')->__('Social Security Number: %s', $this->htmlEscape($this->getInfo()->getAdditionalInformation('social_security_number'))) ?><br/>
+        <?php endif; ?>
+        <?php echo Mage::helper('mozg_userede')->__('Credit Card Type: %s', $this->htmlEscape($this->getCcTypeName())) ?><br/>
+        <?php echo Mage::helper('mozg_userede')->__('Credit Card Number: xxxx-%s', $this->htmlEscape($this->getInfo()->getCcLast4())) ?><br/>
+        <?php echo Mage::helper('mozg_userede')->__('Expiration Date: %s/%s', $this->htmlEscape($this->getCcExpMonth()), $this->htmlEscape($this->getInfo()->getCcExpYear())) ?><br/>
+        <?php if($this->htmlEscape($this->getInfo()->getAdditionalInformation('number_of_installments')) != "" && $this->htmlEscape($this->getInfo()->getAdditionalInformation('number_of_installments')) > 1): ?>
+            <?php echo Mage::helper('mozg_userede')->__('Number of installments: %s', $this->htmlEscape($this->getInfo()->getAdditionalInformation('number_of_installments'))) ?><br/>
+        <?php endif; ?>
+        <?php
+
+        $var = $this->htmlEscape($this->getInfo()->getMozgAcquirerReference());
+
+        if( isset($responseData) && ($info->getMozgPspReference() != '') && empty($var) && array_key_exists('Payment', $responseData) ):
+
+        ?>
+            <?php echo Mage::helper('mozg_userede')->__('Tid:: %s', $this->htmlEscape($responseData['Payment']['AcquirerTransactionId'])) ?><br/>
+        <?php endif; ?>
+    <?php endif; ?>
+
+
+
+
+    <?php if ($this->getInfo()->getMethod() == 'mozg_userede_api_dc'): ?>
+        <?php echo Mage::helper('mozg_userede')->__('Name on the Card: %s', $this->htmlEscape($this->getInfo()->getCcOwner())) ?><br/>
+        <?php echo Mage::helper('mozg_userede')->__('Credit Card Type: %s', $this->htmlEscape($this->getCcTypeName())) ?><br/>
+        <?php echo Mage::helper('mozg_userede')->__('Credit Card Number: xxxx-%s', $this->htmlEscape($this->getInfo()->getCcLast4())) ?><br/>
+        <?php echo Mage::helper('mozg_userede')->__('Expiration Date: %s/%s', $this->htmlEscape($this->getCcExpMonth()), $this->htmlEscape($this->getInfo()->getCcExpYear())) ?><br/>
+
+        <?php
+
+        $var = $this->htmlEscape($this->getInfo()->getMozgAcquirerReference());
+
+        if( ($info->getMozgPspReference() != '') && empty($var) ):
+
+        ?>
+            <?php echo Mage::helper('mozg_userede')->__('Tid:: %s', $this->htmlEscape($responseData['Payment']['AcquirerTransactionId'])) ?><br/>
+        <?php endif; ?>
+    <?php endif; ?>
+
+
+
+
+    <?php if ($this->getInfo()->getMethod() == 'mozg_userede_api_boleto'): ?>
+        <?php $boleto = unserialize($this->getInfo()->getPoNumber())?>
+        <?php echo Mage::helper('mozg_userede')->__('Social Security Number: %s', $this->htmlEscape($boleto['social_security_number'])) ?><br/>
+        <?php echo Mage::helper('mozg_userede')->__('Firstname: %s', $this->htmlEscape($boleto['firstname'])) ?><br/>
+        <?php echo Mage::helper('mozg_userede')->__('Lastname: %s', $this->htmlEscape($boleto['lastname'])) ?><br/>
+
+        <?php if($this->getInfo()->getOrder() != null): ?>
+        <?php echo Mage::helper('mozg_userede')->__('Boleto PDF: <a target="_blank" href="%s">Download</a>', $this->getInfo()->getOrder()->getMozgPaymentUrl()) ?><br/>
+        <?php endif;?>
+
+        <?php if( isset($responseData) ): ?>
+        <?php echo Mage::helper('mozg_userede')->__('Instructions: %s', $this->__($responseData['Payment']['Instructions'])) ?><br/>
+        <?php endif;?>
+    <?php endif; ?>
+
+
+
+
+    <?php if ($this->getInfo()->getMethod() == 'mozg_userede_api_eletronictransfer'): ?>
+        <?php $boleto = unserialize($this->getInfo()->getPoNumber())?>
+        <?php echo Mage::helper('mozg_userede')->__('Social Security Number: %s', $this->htmlEscape($boleto['social_security_number'])) ?><br/>
+        <?php echo Mage::helper('mozg_userede')->__('Firstname: %s', $this->htmlEscape($boleto['firstname'])) ?><br/>
+        <?php echo Mage::helper('mozg_userede')->__('Lastname: %s', $this->htmlEscape($boleto['lastname'])) ?><br/>
+
+        <?php if($this->getInfo()->getOrder() != null): ?>
+        <?php echo Mage::helper('mozg_userede')->__('EletronicTransfer PDF: <a target="_blank" href="%s">Download</a>', $this->getInfo()->getOrder()->getMozgPaymentUrl()) ?><br/>
+        <?php endif;?>
+    <?php endif; ?>
+
+
+    <?php if (Mage::app()->getStore()->isAdmin()): ?>
+        <?php if($this->htmlEscape($this->getInfo()->getMozgAvsResult()) != ""): ?>
+            <?php echo Mage::helper('mozg_userede')->__('Avs result: %s', $this->htmlEscape($this->getInfo()->getMozgAvsResult())) ?><br/>
+        <?php endif; ?>
+        <?php if($this->htmlEscape($this->getInfo()->getMozgCvcResult()) != ""): ?>
+            <?php echo Mage::helper('mozg_userede')->__('Cvc result: %s', $this->htmlEscape($this->getInfo()->getMozgCvcResult())) ?><br/>
+        <?php endif; ?>
+        <?php if($this->htmlEscape($this->getInfo()->getMozgTotalFraudScore()) != ""): ?>
+            <?php echo Mage::helper('mozg_userede')->__('Total fraud score: %s', $this->htmlEscape($this->getInfo()->getMozgTotalFraudScore())) ?><br/>
+        <?php endif; ?>
+        <?php if($this->htmlEscape($this->getInfo()->getMozgRefusalReasonRaw()) != ""): ?>
+            <?php echo Mage::helper('mozg_userede')->__('Raw acquirer response: %s', $this->htmlEscape($this->getInfo()->getMozgRefusalReasonRaw())) ?><br/>
+        <?php endif; ?>
+        <?php if($this->htmlEscape($this->getInfo()->getMozgAuthCode()) != ""): ?>
+            <?php echo Mage::helper('mozg_userede')->__('Authorisation code: %s', $this->htmlEscape($this->getInfo()->getMozgAuthCode())) ?><br/>
+        <?php endif; ?>
+        <?php if($this->htmlEscape($this->getInfo()->getMozgAcquirerReference()) != ""): ?>
+            <?php echo Mage::helper('mozg_userede')->__('Acquirer reference: %s', $this->htmlEscape($this->getInfo()->getMozgAcquirerReference())) ?><br/>
+        <?php endif; ?>
+    <?php endif; ?>
+
+    <!-- Anti-Fraud -->
+
+    <?php if ($info->getMozgPspReference() == ''): ?>
+
+    <?php else :?>
+
+        <?php
+
+        $order = $info->getOrder();
+        $amount = $order->getGrandTotal();
+        $payment = $order->getPayment();
+        $getAdditionalInformation = $payment->getAdditionalInformation();
+
+        if (array_key_exists('mozg_userede_api_request_data', $getAdditionalInformation) ){
+
+            $request_data = $getAdditionalInformation['mozg_userede_api_request_data'];
+            $response_data = $getAdditionalInformation['mozg_userede_api_response_data'];
+
+            //dump($getAdditionalInformation);
+            //dump($response_data);
+
+            if(array_key_exists('FraudAnalysis', $response_data['Payment'])){
+
+                $status = $response_data['Payment']['FraudAnalysis']['Status'];
+
+                dump($response_data['Payment']['FraudAnalysis']);
+
+            }
+
+            $html =
+    <<<EOF
+
+
+EOF;
+
+            echo $html;
+
+        }
+
+        ?>
+
+    <?php endif;?>
+
+    <!-- Anti-Fraud -->
+
+<?php endif;?>

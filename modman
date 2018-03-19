@@ -1,0 +1,12 @@
+## Modman Module Mozg
+app/code/local/Mozg/Userede/	app/code/local/Mozg/Userede/
+app/design/adminhtml/default/default/layout/mozg_userede.xml	app/design/adminhtml/default/default/layout/mozg_userede.xml
+app/design/adminhtml/default/default/template/mozg_userede/	app/design/adminhtml/default/default/template/mozg_userede/
+app/design/frontend/base/default/layout/mozg_userede.xml	app/design/frontend/base/default/layout/mozg_userede.xml
+app/design/frontend/base/default/template/mozg_userede/	app/design/frontend/base/default/template/mozg_userede/
+app/etc/modules/Mozg_Userede.xml	app/etc/modules/Mozg_Userede.xml
+app/locale/pt_BR/Mozg_Userede.csv	app/locale/pt_BR/Mozg_Userede.csv
+js/mozg_userede/	js/mozg_userede/
+skin/adminhtml/default/default/images/mozg_userede/	skin/adminhtml/default/default/images/mozg_userede/
+skin/frontend/base/default/css/mozg_userede/	skin/frontend/base/default/css/mozg_userede/
+skin/frontend/base/default/images/mozg_userede/	skin/frontend/base/default/images/mozg_userede/
